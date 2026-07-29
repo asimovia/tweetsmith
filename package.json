@@ -1,0 +1,18 @@
+{
+  "name": "tweetsmith",
+  "version": "0.1.0",
+  "description": "MeshKore reference paid agent: text → tweet. Solana devnet x402 demo. Canonical public clone-target for the full v1 MeshKore agent protocol.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5.6.3",
+    "wrangler": "^3.99.0"
+  }
+}

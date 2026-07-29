@@ -1,0 +1,116 @@
+name = "tweetsmith"
+main = "src/index.ts"
+compatibility_date = "2025-09-15"
+compatibility_flags = ["nodejs_compat"]
+
+# Public route — CF assigns <name>.<account>.workers.dev by default.
+#
+# Custom domain (AG13, deferred-ops): uncomment the block below AND make
+# sure `tweetsmith.agent.meshkore.com` exists as a Workers Custom Domain
+# in the `meshkore.com` Cloudflare zone (the dashboard's Workers → Custom
+# Domains UI creates the DNS record + route binding in one step). Then
+# `wrangler deploy` and the route is live.
+#
+# routes = [
+#   { pattern = "tweetsmith.agent.meshkore.com", custom_domain = true },
+# ]
+
+# ─── KV (idempotency cache for verified payment proofs, heartbeat cursor) ─
+# Placeholder id — AG8/AG9 swap in the real namespace.
+[[kv_namespaces]]
+binding = "CACHE"
+id = "3e68f85c5cb846aebe6c382f1cc054ac"
+
+# ─── KV (x402 nonces — issued at 402-challenge time, TTL ~11 min) ───
+# Holds `nonce:<base58>` → '<expiresAt-epoch-seconds>' so AG9b can
+# distinguish unknown / expired / already-consumed. TTL is the logical
+# 10-min window plus a 60-s grace so post-expiry consumes still see
+# the key (and get a precise `nonce-expired` reason). AG9a issues;
+# AG9b consumes (single-use check + on-chain verify). Create the real
+# namespace with:
+#   wrangler kv:namespace create X402_NONCES
+# then swap the placeholder id below for the real one.
+[[kv_namespaces]]
+binding = "X402_NONCES"
+id = "1f353ab58ccf402eace6455da22daa79"
+
+# ─── KV (x402 paid-signature idempotency — TTL 7 days) ──────────────
+# Holds `sig:<solana-signature>` → '<cached-tweet-json>' for 7 days.
+# AG9b writes after a successful verify so a replay of the same proof
+# returns the cached tweet without re-charging or re-hitting the LLM
+# upstream. The caller paid once; KV preserves the result. Create the
+# real namespace with:
+#   wrangler kv:namespace create X402_PAID_SIGS
+# then swap the placeholder id below for the real one.
+[[kv_namespaces]]
+binding = "X402_PAID_SIGS"
+id = "cd106ed2665e484b8e38140f74972221"
+
+# ─── Cron — hub heartbeat every 5 min. Wired by AG11. ────────
+[triggers]
+crons = ["*/5 * * * *"]
+
+# ─── Vars (non-secret) ──────────────────────────────────────
+[vars]
+HUB_URL          = "https://hub.meshkore.com"
+ORACLE_URL       = "https://meshkore-oracle.rjj.workers.dev"
+AGENT_ID         = "tweetsmith"
+PUBLIC_ENDPOINT  = "https://tweetsmith.agent.meshkore.com"
+
+# ─── Payment surface (AG8) ──────────────────────────────────
+# SOLANA_NETWORK is the historical alias card.ts reads; PAYMENT_NETWORK
+# is the protocol-minimum.md canonical name — both carry the same value
+# so a v0.2 mainnet swap is still a single-line flip. PAYMENT_ADDRESS
+# mirrors TWEETSMITH_WALLET_PUBKEY for anyone grepping the canonical
+# x402 var-name.
+SOLANA_NETWORK            = "solana-devnet"
+PAYMENT_NETWORK           = "solana-devnet"
+SOLANA_RPC                = "https://api.devnet.solana.com"
+TWEETSMITH_WALLET_PUBKEY  = "J4Y1HqyshcYovUhoVU5bzMggFXxcU5Q6X8wcmNnATUNS"
+PAYMENT_ADDRESS           = "J4Y1HqyshcYovUhoVU5bzMggFXxcU5Q6X8wcmNnATUNS"
+
+# Pricing per tier (lamports). Forward-compat with v0.2 mainnet:
+# only the network env-var flips; amounts and structure stay.
+# PRICE_LAMPORTS is the protocol-minimum.md canonical name; it
+# mirrors PRICE_STANDARD (the default tier).
+# AG10 locked prices (operator preference): mini=100k, std=250k,
+# extended=500k, max=1M lamports. card.ts `TIER_PRICES` is the source
+# of truth and falls back here when env is blank.
+PRICE_MINI       = "100000"
+PRICE_STANDARD   = "250000"
+PRICE_EXTENDED   = "500000"
+PRICE_MAX        = "1000000"
+PRICE_LAMPORTS   = "250000"
+
+# ─── Free-tier daily allowance (AG10) ───────────────────────
+# Per-caller cap on free calls in any rolling 24h. Counter lives in
+# the CACHE KV namespace under `free:<caller-id>`. Caller-id is
+# `X-Caller-Id` header if present, else a hash of CF-Connecting-IP.
+FREE_DAILY_CAP   = "3"
+
+# ─── Prepaid balance (AG12) ─────────────────────────────────
+# 1 credit = LAMPORTS_PER_CREDIT lamports. Default 100000 (= 0.0001 SOL).
+# Cron polls inbound transfers to TWEETSMITH_WALLET_PUBKEY, extracts the
+# api_key from the memo (Solana-Pay `reference`+`memo` set by /v1/topup),
+# and credits the balance idempotently (sig marker in env.CACHE).
+LAMPORTS_PER_CREDIT = "100000"
+
+# ─── Identity + agent-using-agent demo (AG14) ───────────────
+# The reputation bureau + OUR image agent (the supplier Tweetsmith
+# hires in POST /v1/tweet-with-image). IMAGE_AGENT_ID is its slug, used
+# as the signed-feedback target. Secrets (IDENTITY_JWK = Tweetsmith's own
+# Ed25519 identity key; IMAGE_AGENT_API_KEY = its prepaid deposit key with
+# the image agent) go via `wrangler secret put`.
+API_URL          = "https://api.meshkore.com"
+IMAGE_AGENT_URL  = "https://lucid.agent.meshkore.com"
+IMAGE_AGENT_ID   = "lucid"
+
+# ─── Secrets (set via `wrangler secret put`) ────────────────
+# LLM_API_KEY           AG10 — provider-agnostic name (the worker
+#                       picks Gemini Flash; provider declared in
+#                       agent_card.tags as `llm:gemini-flash`).
+# GEMINI_API_KEY        Legacy alias — falls back to LLM_API_KEY.
+# SOLANA_PRIVATE_KEY    Solana keypair, JSON-array shape (64-byte
+#                       secret-key from solana-keygen). Wired by AG8.
+# HUB_TOKEN             JWT issued by the hub on first register (AG11)
+# HUB_API_KEY           api_key alternative auth for token refresh (AG11)
