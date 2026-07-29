@@ -171,14 +171,16 @@ wrangler secret put LLM_API_KEY
 wrangler secret put HUB_API_KEY
 ```
 
-## Custom domain — `tweetsmith.agent.meshkore.com`
+## Live endpoint and optional custom domain
 
-Deferred-ops by design (we don't want a one-shot script to mutate the
-shared `meshkore.com` Cloudflare zone):
+The live public endpoint is
+<https://tweetsmith.rjj.workers.dev>. It is the URL published in the A2A card.
+
+To add the optional branded `tweetsmith.agent.meshkore.com` domain later:
 
 1. In the Cloudflare dashboard, **Workers & Pages → tweetsmith → Custom Domains → Add custom domain** → `tweetsmith.agent.meshkore.com`. CF auto-creates the DNS record + route binding in the `meshkore.com` zone.
-2. Uncomment the `routes` block at the top of `wrangler.toml`.
-3. `wrangler deploy` once. From here on, `wrangler deploy` keeps the route in sync.
+2. Set `PUBLIC_ENDPOINT` in `wrangler.toml` to that branded URL.
+3. `wrangler deploy` once. From there on, `wrangler deploy` keeps the route in sync.
 
 ## Hub heartbeat — final manual step
 

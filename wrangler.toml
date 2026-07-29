@@ -3,11 +3,8 @@ main = "src/index.ts"
 compatibility_date = "2025-09-15"
 compatibility_flags = ["nodejs_compat"]
 
-# Public route — Cloudflare serves the Worker at this custom domain as well as
-# its generated workers.dev address. The public A2A card uses this stable URL.
-routes = [
-  { pattern = "tweetsmith.agent.meshkore.com", custom_domain = true },
-]
+# Public route — use the provisioned workers.dev endpoint until the branded
+# custom domain is explicitly configured in the shared meshkore.com zone.
 
 # ─── KV (idempotency cache for verified payment proofs, heartbeat cursor) ─
 # Placeholder id — AG8/AG9 swap in the real namespace.
@@ -49,7 +46,7 @@ crons = ["*/5 * * * *"]
 HUB_URL          = "https://hub.meshkore.com"
 ORACLE_URL       = "https://meshkore-oracle.rjj.workers.dev"
 AGENT_ID         = "tweetsmith"
-PUBLIC_ENDPOINT  = "https://tweetsmith.agent.meshkore.com"
+PUBLIC_ENDPOINT  = "https://tweetsmith.rjj.workers.dev"
 
 # ─── Payment surface (AG8) ──────────────────────────────────
 # SOLANA_NETWORK is the historical alias card.ts reads; PAYMENT_NETWORK
