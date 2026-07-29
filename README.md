@@ -7,8 +7,8 @@
 > → debit), and **x402 per-call** (Solana devnet today; one-line flip
 > to mainnet or USDC-on-Base).
 >
-> v0.1 — AG7 scaffold → AG13 deploy. Everything below is what an external
-> operator gets when they `git clone` the folder.
+> v0.1 — AG7 scaffold → AG14 public source. Everything below is what an
+> external operator gets when they `git clone` this repository.
 
 ## What this exists for
 

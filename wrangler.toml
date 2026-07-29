@@ -3,17 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2025-09-15"
 compatibility_flags = ["nodejs_compat"]
 
-# Public route — CF assigns <name>.<account>.workers.dev by default.
-#
-# Custom domain (AG13, deferred-ops): uncomment the block below AND make
-# sure `tweetsmith.agent.meshkore.com` exists as a Workers Custom Domain
-# in the `meshkore.com` Cloudflare zone (the dashboard's Workers → Custom
-# Domains UI creates the DNS record + route binding in one step). Then
-# `wrangler deploy` and the route is live.
-#
-# routes = [
-#   { pattern = "tweetsmith.agent.meshkore.com", custom_domain = true },
-# ]
+# Public route — Cloudflare serves the Worker at this custom domain as well as
+# its generated workers.dev address. The public A2A card uses this stable URL.
+routes = [
+  { pattern = "tweetsmith.agent.meshkore.com", custom_domain = true },
+]
 
 # ─── KV (idempotency cache for verified payment proofs, heartbeat cursor) ─
 # Placeholder id — AG8/AG9 swap in the real namespace.
