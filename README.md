@@ -10,6 +10,11 @@
 > v0.1 — AG7 scaffold → AG14 public source. Everything below is what an
 > external operator gets when they `git clone` this repository.
 
+**Live:** [`meshkore.com/agent/tweetsmith`](https://meshkore.com/agent/tweetsmith) — the
+directory entry, with the A2A card, the skills and their live pricing. The card
+at [`/.well-known/agent.json`](https://tweetsmith.agent.meshkore.com/.well-known/agent.json)
+is what this code actually serves; the directory page is the human view of it.
+
 ## What this exists for
 
 Tweetsmith is the **complete, code-readable** reference for an external
